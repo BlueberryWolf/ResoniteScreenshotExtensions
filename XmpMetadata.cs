@@ -246,7 +246,7 @@ public static class XmpMetadata
         );
     }
 
-    static void AddRdfDescription(XElement xmpRoot, PhotoMetadata photoMetadata)
+    static void AddRdfDescription(XElement xmpRoot, Metadata metadata)
     {
         var rdfNS = XNamespace.Get(rdfPrefixNamespace);
         var rdfName = rdfNS + "RDF";
@@ -257,20 +257,19 @@ public static class XmpMetadata
         var ns = XNamespace.Get(thisModNamespaceV2);
         description.SetAttributeValue(XNamespace.Xmlns + "rse", ns);
 
-        var metadata = new Metadata(photoMetadata);
         SerializeMetadata(description, metadata);
 
         rdf.Add(description);
     }
 
-    public static void UpsertPhotoMetadata(FreeImageBitmap bmp, PhotoMetadata photoMetadata)
+    public static void UpsertPhotoMetadata(FreeImageBitmap bmp, Metadata metadata)
     {
         var fiMeta = bmp.Metadata;
         fiMeta.HideEmptyModels = false;
         var xmpMeta = (MDM_XMP)fiMeta[FREE_IMAGE_MDMODEL.FIMD_XMP];
 
         var xmpRoot = ParseOrDefaultXmp(xmpMeta.Xml);
-        AddRdfDescription(xmpRoot, photoMetadata);
+        AddRdfDescription(xmpRoot, metadata);
 
         xmpMeta.Xml = "<?xpacket begin=\"\ufeff\"?>" + xmpRoot.ToString(SaveOptions.DisableFormatting) + "<?xpacket end=\"w\"?>";
     }

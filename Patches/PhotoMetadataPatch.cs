@@ -72,13 +72,13 @@ public partial class ResoniteScreenshotExtensions : ResoniteMod
             }
         }
 
-        static void SaveImage(PhotoMetadata photoMetadata, string srcPath, string dstPath, ImageFormat format)
+        static void SaveImage(Metadata metadata, string srcPath, string dstPath, ImageFormat format)
         {
             using (var bmp = new FreeImageBitmap(srcPath))
             {
                 if (_config?.GetValue(SavePhotoMetadataToFileKey) ?? false)
                 {
-                    XmpMetadata.UpsertPhotoMetadata(bmp, photoMetadata);
+                    XmpMetadata.UpsertPhotoMetadata(bmp, metadata);
                 }
 
                 // EnsureNonHDR
@@ -115,7 +115,7 @@ public partial class ResoniteScreenshotExtensions : ResoniteMod
 
             if (_config != null && _config.GetValue(DiscordWebhookAutoUploadKey) && (_config.GetValue(DiscordWebhookUrlKey) ?? "").Length > 0)
             {
-                PostToDiscord(new Metadata(photoMetadata), srcPath);
+                PostToDiscord(metadata, srcPath);
             }
         }
 
@@ -125,23 +125,27 @@ public partial class ResoniteScreenshotExtensions : ResoniteMod
         {
             if (!(_config?.GetValue(EnabledKey) ?? false)) return;
 
+            // MEMO: spawn権限のないワールドでは写真のSlotがdestroyされてしまうため、photoMetadataへの参照が確実にあるタイミングで情報を取得しておく
+            var metadata = new Metadata(__instance);
+            var tex = __instance.Slot.GetComponent<StaticTexture2D>();
+            var url = tex?.URL.Value;
+            var engine = __instance.Engine;
+            var timeTaken = __instance.TimeTaken.Value.ToLocalTime();
+
             // PhotoMetadata を WindowsPlatformConnector.NotifyOfScreenshot に確実に渡すのが面倒なのでここで代替する
             __instance.StartGlobalTask(async () =>
             {
                 try
                 {
-                    var tex = __instance.Slot.GetComponent<StaticTexture2D>();
-                    var url = tex?.URL.Value;
                     if (url is null) return;
 
                     await new ToBackground();
                     // キャッシュが効いてるはずなので重複して実行しても大してコストはかからない認識
-                    var tmpPath = await __instance.Engine.AssetManager.GatherAssetFile(url, 100f);
+                    var tmpPath = await engine.AssetManager.GatherAssetFile(url, 100f);
                     if (tmpPath is null) return;
 
-                    var timeTaken = __instance.TimeTaken.Value.ToLocalTime();
                     string pictures = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-                    pictures = Path.Combine(pictures, __instance.Engine.Cloud.Platform.Name);
+                    pictures = Path.Combine(pictures, engine.Cloud.Platform.Name);
                     if (_config?.GetValue(DigFolderWhenSavingKey) ?? false)
                     {
                         pictures = Path.Combine(pictures, timeTaken.ToString("yyyy-MM"));
@@ -196,12 +200,12 @@ public partial class ResoniteScreenshotExtensions : ResoniteMod
                                     ".png" => ImageFormat.PNG,
                                     _ => ImageFormat.JPEG
                                 };
-                                SaveImage(__instance, tmpPath, str1, extFormat);
+                                SaveImage(metadata, tmpPath, str1, extFormat);
                             }
                         }
                         else
                         {
-                            SaveImage(__instance, tmpPath, str1, format);
+                            SaveImage(metadata, tmpPath, str1, format);
                         }
                     }
                     catch (Exception ex)

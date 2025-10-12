@@ -92,7 +92,7 @@ public record Metadata
         photoMetadata.TakenGlobalRotation,
         photoMetadata.TakenGlobalScale,
         photoMetadata.AppVersion,
-        photoMetadata.UserInfos.Select(userInfo => new MetadataUserInfo(userInfo)),
+        photoMetadata.UserInfos.Select(userInfo => new MetadataUserInfo(userInfo)).ToList(),
         photoMetadata.CameraManufacturer,
         photoMetadata.CameraModel,
         photoMetadata.CameraFOV,
