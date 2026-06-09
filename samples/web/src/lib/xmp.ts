@@ -111,9 +111,7 @@ const parseXML = (xmlObj: any) => {
     takenGlobalRotation: parseFloatQ(xmlObj["rse:TakenGlobalRotation"]),
     takenGlobalScale: parseFloat3(xmlObj["rse:TakenGlobalScale"]),
     appVersion: xmlObj["rse:AppVersion"],
-    userInfos: xmlObj["rse:UserInfos"].map((o: any) => {
-      const info = o["rse:UserInfo"];
-
+    userInfos: (xmlObj["rse:UserInfos"]?.["rse:UserInfo"] || []).map((info: any) => {
       return {
         user: {
           id: info["rse:U-Id"],
@@ -142,7 +140,7 @@ export const parseMetadata = (xml: string) => {
     ignoreAttributes: false,
     attributeNamePrefix: "",
     isArray: (tagName) =>
-      ["rdf:Description", "rse:UserInfos"].includes(tagName),
+      ["rdf:Description", "rse:UserInfo"].includes(tagName),
     parseAttributeValue: true,
   });
   const xmpData = parser.parse(xml);
