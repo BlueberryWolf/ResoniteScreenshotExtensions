@@ -1,4 +1,5 @@
 import { AspectRatio, Button } from "@/components/ui";
+import { cn } from "@/lib/utils";
 import { useState, useRef, DragEvent, ChangeEvent } from "react";
 
 function ImageFrame({
@@ -66,7 +67,10 @@ function ImageFrame({
     <div>
       <AspectRatio
         ratio={16 / 9}
-        className={`border-2 rounded-md p-2 ${isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300"}`}
+        className={cn(
+          "border-2 rounded-md p-2",
+          isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300",
+        )}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}

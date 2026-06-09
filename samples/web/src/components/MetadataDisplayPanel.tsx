@@ -11,7 +11,7 @@ import { UserLabel } from "./UserLabel";
 
 function MetadataTable({
   value,
-  hiddenKeys,
+  hiddenKeys = [],
 }: {
   value?: Metadata;
   hiddenKeys?: string[];
@@ -43,7 +43,7 @@ function MetadataTable({
       <TableBody>
         {value &&
           Object.entries(value)
-            .filter((e) => !hiddenKeys || !hiddenKeys.includes(e[0]))
+            .filter((e) => !hiddenKeys.includes(e[0]))
             .map((item) => {
               const [key, val] = item;
               return (

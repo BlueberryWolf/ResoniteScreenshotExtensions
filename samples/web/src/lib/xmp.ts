@@ -3,13 +3,38 @@
 import { XMLParser } from "fast-xml-parser";
 import { float3, floatQ, Metadata } from "./metadata";
 
+const UNICODE_ESCAPE_RE = /(?<!\\)\\u([0-9A-Fa-f]{4})/g;
+const DOUBLE_BACKSLASH_U_RE = /\\\\u/g;
+
 const unescapeUnicode = (str: string) => {
   return str
-    .replace(/(?<!\\)\\u([0-9A-Fa-f]{4})/g, (_, p1) => {
+    .replace(UNICODE_ESCAPE_RE, (_, p1) => {
       return String.fromCharCode(parseInt(p1, 16));
     })
-    .replace(/\\\\u/g, "\\u");
+    .replace(DOUBLE_BACKSLASH_U_RE, "\\u");
 };
+
+const FLOAT_ARRAY_RE = /^\[(.+)\]$/;
+
+const parseFloatArray = <T extends number[]>(
+  str: string | undefined,
+  fallback: T,
+): T => {
+  if (str === undefined) {
+    return fallback;
+  }
+  const matched = str.match(FLOAT_ARRAY_RE);
+  const values = matched?.[1].split("; ");
+  if (!values || values.length !== fallback.length) {
+    throw new Error("Invalid format");
+  }
+  return values.map(Number) as T;
+};
+
+const parseFloat3 = (str: string | undefined) =>
+  parseFloatArray(str, [0, 0, 0] as float3);
+const parseFloatQ = (str: string | undefined) =>
+  parseFloatArray(str, [0, 0, 0, 1] as floatQ);
 
 export const loadXMP = async (file: File) => {
   const fileContent = await file.text();
@@ -68,29 +93,6 @@ const parseComponentJson = (json: string) => {
 };
 
 const parseXML = (xmlObj: any) => {
-  const parseFloat3 = (str: string | undefined) => {
-    if (str === undefined) {
-      return [0, 0, 0] as float3;
-    }
-    const matched = str.match(/^\[(.+); (.+); (.+)\]$/);
-    if (!matched) {
-      throw new Error("Invalid format");
-    }
-    return [matched[1], matched[2], matched[3]].map(Number) as float3;
-  };
-  const parseFloatQ = (str: string | undefined) => {
-    if (str === undefined) {
-      return [0, 0, 0, 1] as floatQ;
-    }
-    const matched = str.match(/^\[(.+); (.+); (.+); (.+)\]$/);
-    if (!matched) {
-      throw new Error("Invalid format");
-    }
-    return [matched[1], matched[2], matched[3], matched[4]].map(
-      Number,
-    ) as floatQ;
-  };
-
   const metadata: Metadata = {
     locationName: xmlObj["rse:LocationName"],
     locationURL: xmlObj["rse:LocationURL"],
@@ -111,20 +113,22 @@ const parseXML = (xmlObj: any) => {
     takenGlobalRotation: parseFloatQ(xmlObj["rse:TakenGlobalRotation"]),
     takenGlobalScale: parseFloat3(xmlObj["rse:TakenGlobalScale"]),
     appVersion: xmlObj["rse:AppVersion"],
-    userInfos: (xmlObj["rse:UserInfos"]?.["rse:UserInfo"] || []).map((info: any) => {
-      return {
-        user: {
-          id: info["rse:U-Id"],
-          name: info["rse:U-Name"],
-          machineId: info["rse:U-MachineId"],
-        },
-        isInVR: info["rse:UI-IsInVR"],
-        isPresent: info["rse:UI-IsPresent"],
-        headPosition: parseFloat3(info["rse:UI-HeadPosition"]),
-        headOrientation: parseFloatQ(info["rse:UI-HeadOrientation"]),
-        sessionJoinTimestamp: new Date(info["rse:UI-SessionJoinTimestamp"]),
-      };
-    }),
+    userInfos: (xmlObj["rse:UserInfos"]?.["rse:UserInfo"] || []).map(
+      (info: any) => {
+        return {
+          user: {
+            id: info["rse:U-Id"],
+            name: info["rse:U-Name"],
+            machineId: info["rse:U-MachineId"],
+          },
+          isInVR: info["rse:UI-IsInVR"],
+          isPresent: info["rse:UI-IsPresent"],
+          headPosition: parseFloat3(info["rse:UI-HeadPosition"]),
+          headOrientation: parseFloatQ(info["rse:UI-HeadOrientation"]),
+          sessionJoinTimestamp: new Date(info["rse:UI-SessionJoinTimestamp"]),
+        };
+      },
+    ),
     cameraManufacturer: xmlObj["rse:CameraManufacturer"],
     cameraModel: xmlObj["rse:CameraModel"],
     cameraFOV: xmlObj["rse:CameraFOV"],
@@ -139,8 +143,7 @@ export const parseMetadata = (xml: string) => {
   const parser = new XMLParser({
     ignoreAttributes: false,
     attributeNamePrefix: "",
-    isArray: (tagName) =>
-      ["rdf:Description", "rse:UserInfo"].includes(tagName),
+    isArray: (tagName) => ["rdf:Description", "rse:UserInfo"].includes(tagName),
     parseAttributeValue: true,
   });
   const xmpData = parser.parse(xml);

@@ -21,8 +21,6 @@ function Viewer() {
     try {
       const data = await loadXMPMetadata(file);
       setMetadata(data ?? undefined);
-
-      console.log("Metadata loaded:", data);
     } catch (error) {
       if (error instanceof Error) {
         console.error("Error loading metadata:", error.message);
