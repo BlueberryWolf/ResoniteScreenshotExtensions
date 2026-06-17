@@ -193,12 +193,12 @@ public static class MetadataInjector
         var vp8xChunk = chunks.Find(c => c.FourCC == "VP8X");
         if (vp8xChunk != null)
         {
-            vp8xChunk.Data[0] |= 0x10; // XMP flag
+            vp8xChunk.Data[0] |= 0x04; // XMP flag (0x04)
         }
         else
         {
             byte[] vp8xData = new byte[10];
-            vp8xData[0] = (byte)(0x10 | (isTransparent ? 0x02 : 0x00));
+            vp8xData[0] = (byte)(0x04 | (isTransparent ? 0x10 : 0x00)); // XMP_FLAG (0x04) | (ALPHA_FLAG (0x10) if transparent)
             int wMinusOne = width - 1;
             int hMinusOne = height - 1;
             vp8xData[4] = (byte)(wMinusOne & 0xFF);

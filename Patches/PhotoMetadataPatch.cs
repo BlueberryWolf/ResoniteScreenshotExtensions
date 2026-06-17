@@ -108,7 +108,7 @@ public partial class ResoniteScreenshotExtensions : ResoniteMod
                                     (srcExt == ".png" && dstExt == ".png") ||
                                     (srcExt == ".webp" && dstExt == ".webp");
 
-                if (isLinux && formatsMatch)
+                if (formatsMatch)
                 {
                     if (shouldSaveMetadata)
                     {
@@ -158,30 +158,19 @@ public partial class ResoniteScreenshotExtensions : ResoniteMod
                         }
                     }
 
-                    if (isLinux)
+                    byte[] finalBytes;
+                    using (var ms = new MemoryStream())
                     {
-                        byte[] finalBytes;
-                        using (var ms = new MemoryStream())
-                        {
-                            bmp.Save(ms, GetFIF(format), GetSaveFlags(format));
-                            finalBytes = ms.ToArray();
-                        }
-
-                        if (shouldSaveMetadata)
-                        {
-                            finalBytes = MetadataInjector.InjectXmp(finalBytes, format, metadata, width, height, isTransparent);
-                        }
-
-                        File.WriteAllBytes(dstPath, finalBytes);
+                        bmp.Save(ms, GetFIF(format), GetSaveFlags(format));
+                        finalBytes = ms.ToArray();
                     }
-                    else
+
+                    if (shouldSaveMetadata)
                     {
-                        if (shouldSaveMetadata)
-                        {
-                            XmpMetadata.UpsertPhotoMetadata(bmp, metadata);
-                        }
-                        bmp.Save(dstPath, GetFIF(format), GetSaveFlags(format));
+                        finalBytes = MetadataInjector.InjectXmp(finalBytes, format, metadata, width, height, isTransparent);
                     }
+
+                    File.WriteAllBytes(dstPath, finalBytes);
                 }
             }
             catch (Exception ex)
