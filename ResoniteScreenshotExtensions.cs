@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using ResoniteModLoader;
 
 namespace ResoniteScreenshotExtensions;
@@ -28,6 +28,9 @@ public partial class ResoniteScreenshotExtensions : ResoniteMod
     [AutoRegisterConfigKey]
     public static readonly ModConfigurationKey<bool> LoadPhotoMetadataFromFileKey =
         new ModConfigurationKey<bool>("LoadPhotoMetadataFromFile", "Load PhotoMetadata from file", () => true);
+    [AutoRegisterConfigKey]
+    public static readonly ModConfigurationKey<string> CustomSavePathKey =
+        new ModConfigurationKey<string>("CustomSavePath", "Custom save path (leave empty for default Pictures folder)", () => "");
     [AutoRegisterConfigKey]
     public static readonly ModConfigurationKey<bool> DigFolderWhenSavingKey =
         new ModConfigurationKey<bool>("DigFolderWhenSaving", "Dig the folder by month and date when saving", () => true);
